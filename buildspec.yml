@@ -1,0 +1,23 @@
+# Ví dụ về các bước trong file buildspec.yml
+version: 0.2
+
+phases:
+  install:
+    commands:
+      # Sử dụng Node.js LTS
+      - echo Installing dependencies...
+      - npm install
+  # pre_build:
+  #   commands:
+  #     - echo Running unit tests...
+  #     - npm test
+  build:
+    commands:
+      # Tạo ra thư mục 'build' chứa các file tĩnh
+      - echo Build started on `date`
+      - npm run build
+artifacts:
+  files:
+    - '**/*'
+  base-directory: build 
+  discard-paths: yes
