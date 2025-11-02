@@ -1,22 +1,21 @@
-# 🚀 Dự án CI/CD Tự động Triển khai Web Tĩnh theo Mô hình CodeDeploy
+# 🚀 Automated CI/CD Project: Static Web Deployment using CodeDeploy
 
-Dự án này mô tả việc xây dựng một Pipeline CI/CD hoàn chỉnh, tích hợp đầy đủ các dịch vụ AWS Developer Tools (CodePipeline, CodeDeploy) để triển khai ứng dụng React tĩnh lên Amazon S3.
-
+This project outlines the construction of a complete CI/CD Pipeline, fully integrating AWS Developer Tools (CodePipeline, CodeDeploy) to deploy a static React application to Amazon S3.
 ---
 
-## 🖼️ 1. Kiến trúc Giải pháp (Architecture Diagram)
+## 🖼️ 1. Architecture Diagram
 
-Đây là sơ đồ thể hiện luồng làm việc của dự án, tập trung vào việc tích hợp AWS CodeDeploy vào quy trình triển khai ứng dụng tĩnh:
+This diagram illustrates the project's workflow, focusing on integrating AWS CodeDeploy into the static application deployment process:
 
+![Project's Structer](https://media.discordapp.net/attachments/1331318634294808711/1434439381556527184/Structure.png?ex=69085547&is=690703c7&hm=e1de377653428477a479f1db55e66a9af4c122408d90351abdd207f196a7b90c&=&format=webp&quality=lossless)
 
+**Workflow Summary:**
 
-**Tóm tắt Luồng làm việc (Workflow):**
-
-1.  **Source (GitHub):** Developer commit code lên nhánh chính (`main`) trên **GitHub**.
-2.  **Orchestration (CodePipeline):** **AWS CodePipeline** tự động kích hoạt Pipeline.
-3.  **Build (CodeBuild):** Mã nguồn được chuyển qua **AWS CodeBuild** để biên dịch (compile) ứng dụng React và tạo ra Artifact chứa các file tĩnh (`build` folder).
-4.  **Deployment (CodeDeploy):** Artifact được chuyển sang **AWS CodeDeploy** để quản lý và thực hiện triển khai theo các bước được định nghĩa.
-5.  **Hosting (Amazon S3):** CodeDeploy (hoặc một bước hành động sau CodeDeploy) triển khai các file đã biên dịch lên **Amazon S3**, được cấu hình làm Static Website Hosting.
+1.  **Source (GitHub):**  The Developer commits code to the branch (`main`) on **GitHub**.
+2.  **Orchestration (CodePipeline):** **AWS CodePipeline** automatically triggers the pipeline.
+3.  **Build (CodeBuild):** The source code is passed to **AWS CodeBuild** to compile the React application and create an Artifact containing the static files. (`build` folder).
+4.  **Deployment (CodeDeploy):** The Artifact is handed over to **AWS CodeDeploy**  to manage and execute the deployment based on defined steps.
+5.  **Hosting (Amazon S3):** CodeDeploy (or a subsequent action after CodeDeploy) deploys the compiled files to **Amazon S3**, , configured for Static Website Hosting.
 
 ---
 
@@ -24,38 +23,52 @@ Dự án này mô tả việc xây dựng một Pipeline CI/CD hoàn chỉnh, t�
 
 | Lĩnh vực | Công cụ/Dịch vụ | Mục đích trong dự án |
 | :--- | :--- | :--- |
-| **Mã nguồn** | React, Node.js | Ứng dụng Web tĩnh. |
-| **Source Control** | **GitHub** | Kho lưu trữ mã nguồn và điểm kích hoạt Pipeline. |
-| **CI Orchestration** | **AWS CodePipeline** | Dịch vụ điều phối toàn bộ quy trình tự động. |
-| **Build & Test** | **AWS CodeBuild** | Biên dịch mã nguồn và chạy lệnh Build theo file `buildspec.yml`. |
-| **Deployment Management** | **AWS CodeDeploy** | Quản lý quy trình triển khai Artifact, thể hiện khả năng làm việc với bộ công cụ DevTools. |
-| **Hosting** | **Amazon S3** | Lưu trữ và phục vụ ứng dụng web tĩnh. |
-| **Bảo mật** | **AWS IAM** | Quản lý các Service Role với nguyên tắc **Least Privilege Principle**. |
-| **(Tùy chọn)** | **[Terraform/CloudFormation]** | (Nếu có) Quản lý toàn bộ cơ sở hạ tầng AWS dưới dạng mã (IaC). |
+| **Source Code** | React, Node.js |	Static Web Application. |
+| **Source Control** | **GitHub** | Source code repository and pipeline trigger point. |
+| **CI Orchestration** | **AWS CodePipeline** | Service orchestrating the entire automated process. |
+| **Build & Test** | **AWS CodeBuild** | 	Compiles source code and runs build commands defined in the  `buildspec.yml` file. |
+| **Deployment Management** | **AWS CodeDeploy** | 	Manages the Artifact deployment process, demonstrating proficiency with the DevTools suite. |
+| **Hosting** | **Amazon S3** | Stores and serves the static web application. |
 
 ---
 
-## ⚙️ 3. Chi tiết Triển khai và Cấu hình
+## ⚙️ 3. Deployment and Configuration
 
-Phần này nhấn mạnh các file cấu hình và điểm kỹ thuật quan trọng.
+This section highlights key configuration files and important technical points.
 
-### 3.1. Cấu hình Build (File `buildspec.yml`)
+### 3.1. Build Configuration (File `buildspec.yml`)
 
-File này hướng dẫn CodeBuild cách biên dịch ứng dụng React.
+This file instructs CodeBuild on how to compile the React application.
 
 ```yaml
 version: 0.2
-# ... (Nội dung đầy đủ của install, pre_build, build)
+
+phases:
+  install:
+    commands:
+      # Use Node.js LTS
+      - echo Installing dependencies...
+      - npm install
+  build:
+    commands:
+      # Create the 'build' folder containing static files
+      - echo Build started on `date`
+      - npm run build
 artifacts:
   files:
     - '**/*'
-  base-directory: build # Thư mục chứa các file tĩnh sau khi biên dịch
-  # ...
+  base-directory: build 
+  discard-paths: yes
 ```
 
-### 3.2. Triển khai và Quản lý Cache
-- **Triển khai**: Giai đoạn Deploy trong CodePipeline sử dụng Action Provider S3 để sao chép các file.
+### 3.2. Deployment
+The Deploy stage in CodePipeline uses the S3 Action Provider to copy the files.
 
-- **Cache Invalidation**: Một Action CodeBuild riêng biệt được thêm vào sau Deploy để chạy lệnh AWS CLI, xóa cache trên CloudFront. Điều này là bằng chứng cho việc bạn hiểu rõ về hiệu suất và phân phối nội dung.
 
-## 🔗 4. Kết quả và Liên kết (Results & Links)
+## 🔗 4. Results
+Let’s test the whole pipeline. I’ll make a small change to the homepage text and push it to GitHub.
+
+As soon as the code is pushed, CodePipeline is triggered. You’ll see it run through the source, build, and deploy stages.
+
+
+![Project's Structer](https://media.discordapp.net/attachments/1331318634294808711/1434448687198634146/image.png?ex=69085df1&is=69070c71&hm=972d2c08a2f0e3cbc60b3f4b56f7ec1cc5216e0c3be26e3f3a6201fc385fd13b&=&format=webp&quality=lossless&width=1557&height=777)
